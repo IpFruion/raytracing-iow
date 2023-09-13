@@ -1,2 +1,4 @@
 /target
-*.svg
+**.svg
+**.ppm
+**.DS_Store
