@@ -10,7 +10,7 @@ use std::{
     path::Path,
 };
 
-use indicatif::ProgressBar;
+use indicatif::{ProgressBar, ProgressStyle};
 use rand::{
     distributions::Standard,
     rngs::{SmallRng, ThreadRng},
@@ -48,6 +48,12 @@ impl Renderer {
         let height = self.screen.height();
 
         let bar = ProgressBar::new(width * height);
+        bar.set_style(
+            ProgressStyle::with_template(
+                "[ETA: {eta_precise}] {bar:40.cyan/blue} {percent:2}% {human_pos:>7}/{human_len:7} pixels",
+            )
+            .unwrap(),
+        );
 
         self.writer.seek(SeekFrom::Start(0))?;
         write!(self.writer, "P3\n{} {}\n255\n\n", width, height)?;
