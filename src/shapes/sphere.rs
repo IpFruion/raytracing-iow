@@ -2,33 +2,27 @@ use std::ops::Range;
 
 use rand::rngs::SmallRng;
 
-use crate::{
-    material::Material,
-    ray::Ray,
-    render::hit::{HitRecord, Hittable},
-    utils::Interval,
-    vec3::Vec3,
-};
+use crate::{ray::Ray, utils::Interval, vec3::Vec3};
+
+use super::{Hit, Hittable};
 
 #[derive(Debug)]
-pub struct Sphere<M> {
+pub struct Sphere {
     center: Vec3,
     radius: f64,
-    mat: M,
 }
 
-impl<M> Sphere<M> {
-    pub fn new<C: Into<Vec3>>(mat: M, center: C, radius: f64) -> Self {
+impl Sphere {
+    pub fn new<C: Into<Vec3>>(center: C, radius: f64) -> Self {
         Self {
             center: center.into(),
             radius,
-            mat,
         }
     }
 }
 
-impl<M: Material> Hittable for Sphere<M> {
-    fn hit(&self, rng: &mut SmallRng, ray: &Ray, hit_range: Range<f64>) -> Option<HitRecord> {
+impl Hittable for Sphere {
+    fn hit(&self, ray: &Ray, hit_range: Range<f64>) -> Option<Hit> {
         let direction = ray.direction();
 
         let camera_to_sphere = ray.origin() - self.center;
@@ -52,12 +46,6 @@ impl<M: Material> Hittable for Sphere<M> {
 
         let point = ray.at(root);
         let normal = (point - self.center) / self.radius;
-        let (ray, color) = self.mat.scatter(rng, ray, point, normal);
-
-        Some(HitRecord {
-            t: root,
-            ray,
-            color,
-        })
+        Some(Hit::new(ray, root, point, normal))
     }
 }

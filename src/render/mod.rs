@@ -1,5 +1,4 @@
 pub mod camera;
-pub mod hit;
 pub mod screen;
 pub mod viewport;
 
@@ -19,14 +18,14 @@ use rand::{
 };
 
 use crate::{
-    pixel::{Pixel, BLACK},
+    color::{Color, BLACK},
     ray::Ray,
+    shapes::Hittable,
     vec3::Vec3,
+    world::World,
 };
 
-use self::{camera::Camera, hit::Hittable, screen::Screen};
-
-pub type World = Vec<Box<dyn Hittable>>;
+use self::{camera::Camera, screen::Screen};
 
 pub struct Renderer {
     screen: Screen,

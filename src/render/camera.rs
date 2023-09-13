@@ -3,12 +3,14 @@ use std::ops::Deref;
 use rand::{rngs::SmallRng, Rng, SeedableRng};
 
 use crate::{
-    pixel::{Pixel, BLACK, SKY_BLUE, WHITE},
+    color::{Color, BLACK, SKY_BLUE, WHITE},
     ray::Ray,
+    shapes::Hittable,
     vec3::{Vec3, ONE},
+    world::Castable,
 };
 
-use super::{hit::Hittable, viewport::Viewport, PixelLocator, Renderer, World};
+use super::{viewport::Viewport, PixelLocator, Renderer, World};
 
 #[derive(Debug)]
 pub struct Camera {
@@ -59,7 +61,7 @@ impl Camera {
         world: &World,
         pixel_locator: &PixelLocator,
         pixel_loc: Vec3,
-    ) -> Pixel {
+    ) -> Color {
         let mut pixel = BLACK;
         for i in 0..self.samples_per_pixel {
             // Adds antialising
@@ -77,15 +79,16 @@ impl Camera {
         pixel.clamp(0.0..0.9999)
     }
 
-    fn ray_color(&mut self, ray: Ray, world: &World) -> Pixel {
+    fn ray_color(&mut self, ray: Ray, world: &World) -> Color {
         let mut stack = vec![(ray, WHITE, 0)];
         let mut output = BLACK;
         while let Some((cur, attenuation, depth)) = stack.pop() {
-            if let Some(hit) = world.deref().cast(&mut self.rng, &cur) {
-                // let on_unit_sphere = Vec3::random_unit_sphere(&mut self.rng);
-                // let direction = hit.normal + on_unit_sphere;
-                let new_att = hit.color.map(|c| attenuation * c).unwrap_or(BLACK);
-                stack.push((hit.ray, new_att, depth + 1))
+            if let Some(cast) = world
+                .deref()
+                .cast(&mut self.rng, &cur, 0.001..f64::INFINITY)
+            {
+                let new_att = cast.color.map(|c| attenuation * c).unwrap_or(BLACK);
+                stack.push((cast.bounce, new_att, depth + 1))
             } else {
                 // ray stopped bouncing
                 output = attenuation * self.render_skybox(&cur);
@@ -99,9 +102,9 @@ impl Camera {
         output
     }
 
-    fn render_skybox(&self, ray: &Ray) -> Pixel {
+    fn render_skybox(&self, ray: &Ray) -> Color {
         let direction = ray.direction();
         let gradiant = 0.5 * (direction.y + 1.0);
-        Pixel::from((1.0 - gradiant) * WHITE + gradiant * SKY_BLUE)
+        Color::from((1.0 - gradiant) * WHITE + gradiant * SKY_BLUE)
     }
 }
