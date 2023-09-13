@@ -21,9 +21,9 @@ assign_math!(Vec3, SubAssign, sub_assign, -=);
 assign_math!(Vec3, MulAssign, mul_assign, *=);
 assign_math!(Vec3, DivAssign, div_assign, /=);
 
-clone_math!(Vec3, Add, add, +=);
-clone_math!(Vec3, Sub, sub, -=);
-clone_math!(Vec3, Mul, mul, *=);
+clone_math!(Vec3, Add, add, +);
+clone_math!(Vec3, Sub, sub, -);
+clone_math!(Vec3, Mul, mul, *);
 
 impl Add<f64> for Vec3 {
     type Output = Self;

@@ -20,9 +20,14 @@ macro_rules! clone_math {
             type Output = Self;
 
             fn $fn_name(self, rhs: Self) -> Self::Output {
-                let mut new = self.clone();
-                new $op rhs;
-                new
+                // let mut new = self.clone();
+                // new $op rhs;
+                // new
+                Self {
+                    x: self.x $op rhs.x,
+                    y: self.y $op rhs.y,
+                    z: self.z $op rhs.z,
+                }
             }
         }
     };
