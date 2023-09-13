@@ -4,12 +4,12 @@ use rand::rngs::SmallRng;
 
 use crate::{
     color::Color,
-    material::Material,
+    materials::{Material, Scatter},
     ray::Ray,
-    shapes::{Hit, Hittable},
+    shapes::{Hit, Hittable, Shape},
 };
 
-pub type World = Vec<Box<dyn Castable>>;
+pub type World = Vec<Object>;
 
 pub struct Cast {
     t: f64,
@@ -43,18 +43,21 @@ impl<C: Castable + ?Sized> Castable for Box<C> {
     }
 }
 
-pub struct Object<H, M> {
-    pub shape: H,
-    pub mat: M,
+pub struct Object {
+    pub shape: Shape,
+    pub mat: Material,
 }
 
-impl<H: Hittable + 'static, M: Material + 'static> Object<H, M> {
-    pub fn new_boxed(shape: H, mat: M) -> Box<dyn Castable> {
-        Box::new(Self { shape, mat })
+impl Object {
+    pub fn new<H: Into<Shape>, M: Into<Material>>(shape: H, mat: M) -> Object {
+        Self {
+            shape: shape.into(),
+            mat: mat.into(),
+        }
     }
 }
 
-impl<H: Hittable, M: Material> Castable for Object<H, M> {
+impl Castable for Object {
     fn cast(&self, rng: &mut SmallRng, ray: &Ray, cast_range: Range<f64>) -> Option<Cast> {
         if let Some(hit) = self.shape.hit(ray, cast_range) {
             let (bounce, color) = self.mat.scatter(rng, ray, &hit);

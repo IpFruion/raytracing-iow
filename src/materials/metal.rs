@@ -2,7 +2,7 @@ use rand::rngs::SmallRng;
 
 use crate::{color::Color, ray::Ray, shapes::Hit, vec3::Vec3};
 
-use super::Material;
+use super::Scatter;
 
 pub struct Metal {
     albedo: Color,
@@ -15,7 +15,7 @@ impl Metal {
     }
 }
 
-impl Material for Metal {
+impl Scatter for Metal {
     fn scatter(&self, rng: &mut SmallRng, ray: &Ray, hit: &Hit) -> (Ray, Option<Color>) {
         let reflected = ray.direction().normalize().reflect(hit.normal);
         let scattered = hit

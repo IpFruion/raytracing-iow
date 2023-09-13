@@ -7,7 +7,7 @@ use crate::{
     vec3::Vec3,
 };
 
-use super::Material;
+use super::Scatter;
 
 pub struct Dielectric {
     /// Index of Refraction
@@ -21,7 +21,7 @@ impl Dielectric {
     }
 }
 
-impl Material for Dielectric {
+impl Scatter for Dielectric {
     fn scatter(&self, rng: &mut SmallRng, ray: &Ray, hit: &Hit) -> (Ray, Option<Color>) {
         let refraction_ratio = if hit.is_front_face {
             self.ir.recip()

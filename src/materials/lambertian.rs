@@ -8,7 +8,7 @@ use crate::{
     vec3::{Vec3, ZERO},
 };
 
-use super::Material;
+use super::Scatter;
 
 pub struct Lambertain {
     albedo: Color,
@@ -20,7 +20,7 @@ impl Lambertain {
     }
 }
 
-impl Material for Lambertain {
+impl Scatter for Lambertain {
     fn scatter(&self, rng: &mut SmallRng, ray: &Ray, hit: &Hit) -> (Ray, Option<Color>) {
         let mut direction = hit.normal + Vec3::random_unit_sphere(rng);
         if ulps_eq!(direction, ZERO) {

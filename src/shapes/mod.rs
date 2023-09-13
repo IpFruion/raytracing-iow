@@ -8,6 +8,8 @@ use rand::rngs::SmallRng;
 
 use crate::{color::Color, ray::Ray, vec3::Vec3};
 
+use self::sphere::Sphere;
+
 /// Describes a shape that is hittable
 pub trait Hittable {
     fn hit(&self, ray: &Ray, hit_range: Range<f64>) -> Option<Hit>;
@@ -50,6 +52,32 @@ impl Hit {
             point,
             is_front_face,
             normal: if is_front_face { normal } else { -normal },
+        }
+    }
+}
+
+pub enum Shape {
+    Sphere(Sphere),
+    Custom(Box<dyn Hittable>),
+}
+
+impl From<Sphere> for Shape {
+    fn from(value: Sphere) -> Self {
+        Self::Sphere(value)
+    }
+}
+
+impl From<Box<dyn Hittable>> for Shape {
+    fn from(value: Box<dyn Hittable>) -> Self {
+        Self::Custom(value)
+    }
+}
+
+impl Hittable for Shape {
+    fn hit(&self, ray: &Ray, hit_range: Range<f64>) -> Option<Hit> {
+        match self {
+            Shape::Sphere(h) => h.hit(ray, hit_range),
+            Shape::Custom(h) => h.hit(ray, hit_range),
         }
     }
 }

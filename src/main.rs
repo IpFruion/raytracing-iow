@@ -1,6 +1,6 @@
 #![allow(unused)]
 mod color;
-mod material;
+mod materials;
 mod ray;
 mod render;
 mod shapes;
@@ -11,7 +11,7 @@ mod world;
 use std::{env::args, io, ops::Deref};
 
 use color::{Color, ORANGE, PURPLE, SKY_BLUE, WHITE};
-use material::{dielectric::Dielectric, lambertian::Lambertain, metal::Metal};
+use materials::{dielectric::Dielectric, lambertian::Lambertain, metal::Metal};
 use rand::{rngs::SmallRng, Rng, SeedableRng};
 use ray::Ray;
 use render::{
@@ -45,13 +45,13 @@ fn main() -> io::Result<()> {
     let mut camera = Camera::new(camera_config, viewport_config);
 
     let mut world = vec![
-        Object::new_boxed(
+        Object::new(
             Sphere::new((0., -1000., -1.), 1000.),
             Lambertain::new(ORANGE),
         ), // land
-        Object::new_boxed(Sphere::new((0., 1., 0.), 1.0), Dielectric::new(1.5)), // ball
-        Object::new_boxed(Sphere::new((-4., 1., 0.), 1.0), Lambertain::new(PURPLE)), // ball
-        Object::new_boxed(Sphere::new((4., 1., 0.), 1.0), Metal::new(WHITE, 0.)), // ball
+        Object::new(Sphere::new((0., 1., 0.), 1.0), Dielectric::new(1.5)), // ball
+        Object::new(Sphere::new((-4., 1., 0.), 1.0), Lambertain::new(PURPLE)), // ball
+        Object::new(Sphere::new((4., 1., 0.), 1.0), Metal::new(WHITE, 0.)), // ball
     ];
 
     let mut rng = SmallRng::from_entropy();
@@ -62,9 +62,9 @@ fn main() -> io::Result<()> {
             let color = Color::from(rng.gen::<Vec3>());
             let shape = Sphere::new((x, 0.2, z), 0.2);
             let obj = match rng.gen_range(0..3) {
-                0 => Object::new_boxed(shape, Metal::new(color, 0.3)),
-                2 => Object::new_boxed(shape, Dielectric::new(rng.gen_range(0.5..2.0))),
-                _ => Object::new_boxed(shape, Lambertain::new(color)),
+                0 => Object::new(shape, Metal::new(color, 0.3)),
+                2 => Object::new(shape, Dielectric::new(rng.gen_range(0.5..2.0))),
+                _ => Object::new(shape, Lambertain::new(color)),
             };
             world.push(obj)
         }
