@@ -10,50 +10,87 @@ use crate::{
     world::Castable,
 };
 
-use super::{viewport::Viewport, PixelLocator, Renderer, World};
+use super::{
+    screen::Screen,
+    viewport::{Viewport, ViewportConfig},
+    PixelLocator, Renderer, World,
+};
+
+#[derive(Debug)]
+pub struct CameraConfig {
+    /// Camera position
+    pub pos: Vec3,
+    /// Look at position
+    pub look_at: Vec3,
+    /// Camera Up direction
+    pub up: Vec3,
+    /// Number of samples per pixel antialising
+    pub samples_per_pixel: u32,
+    /// Max ray bounce depth
+    pub max_depth: u32,
+    // Variation angle of rays through each pixel
+    pub defocus_angle: f64,
+    /// Distance from camera pos point to plane of perfect focus
+    pub focus_dist: f64,
+}
+
+pub struct Defocus {
+    pub disk_u: Vec3,
+    pub disk_v: Vec3,
+}
 
 #[derive(Debug)]
 pub struct Camera {
-    center: Vec3,
-    focal_length: f64,
-    viewport: Viewport,
-    samples_per_pixel: u32,
-    max_depth: u32,
     rng: SmallRng,
+    config: CameraConfig,
+    viewport_config: ViewportConfig,
+    focal_length: f64,
 }
 
 impl Camera {
-    pub fn new(
-        center: Vec3,
-        focal_length: f64,
-        viewport: Viewport,
-        samples_per_pixel: u32,
-        max_depth: u32,
-    ) -> Self {
+    pub fn new(config: CameraConfig, viewport_config: ViewportConfig) -> Self {
+        let focal_length = (config.pos - config.look_at).length();
         Self {
-            center,
-            focal_length,
-            viewport,
-            samples_per_pixel,
-            max_depth,
+            config,
+            viewport_config,
             rng: SmallRng::from_entropy(),
+            focal_length,
         }
     }
 
-    pub fn center(&self) -> Vec3 {
-        self.center
+    pub fn focal_length(&self) -> f64 {
+        self.focal_length
     }
 
-    pub fn viewport(&self) -> &Viewport {
-        &self.viewport
+    pub fn config(&self) -> &CameraConfig {
+        &self.config
     }
 
-    pub fn upper_left(&self) -> Vec3 {
-        let u = self.viewport.u();
-        let v = self.viewport.v();
-        let view_direction: Vec3 = (0., 0., self.focal_length).into();
+    pub fn viewport(&self, screen: &Screen) -> (Viewport, Defocus) {
+        let (height, width) = self
+            .viewport_config
+            .get_dims(screen, self.config.focus_dist);
+        let w = (self.config.pos - self.config.look_at).normalize();
+        let u = self.config.up.cross(w).normalize();
+        let v = w.cross(u);
 
-        self.center - view_direction - u / 2. - v / 2.
+        let defocus_radius =
+            self.config.focus_dist * (self.config.defocus_angle / 2.).to_radians().tan();
+        let defocus = Defocus {
+            disk_u: u * defocus_radius,
+            disk_v: v * defocus_radius,
+        };
+
+        let u = width * u;
+        let v = height * -v;
+
+        let viewport = Viewport {
+            u,
+            v,
+            upper_left: self.config.pos - (self.config.focus_dist * w) - u / 2. - v / 2.,
+        };
+
+        (viewport, defocus)
     }
 
     pub fn get_color(
@@ -63,19 +100,24 @@ impl Camera {
         pixel_loc: Vec3,
     ) -> Color {
         let mut pixel = BLACK;
-        for i in 0..self.samples_per_pixel {
+        for i in 0..self.config.samples_per_pixel {
             // Adds antialising
             let px = -0.5 + self.rng.gen::<f64>();
             let py = -0.5 + self.rng.gen::<f64>();
             let pixel_sample = pixel_locator.adjust_pixel_loc(pixel_loc, px, py);
-
-            let ray_direction = pixel_sample - self.center;
-            let ray = self.center.ray(ray_direction);
+            let ray_origin = if self.config.defocus_angle <= 0. {
+                self.config.pos
+            } else {
+                let p = Vec3::random_in_unit_disk(&mut self.rng);
+                pixel_locator.defocus_pixel(self.config.pos, p.x, p.y)
+            };
+            let ray_direction = pixel_sample - ray_origin;
+            let ray = ray_origin.ray(ray_direction);
 
             pixel += self.ray_color(ray, world);
         }
 
-        let pixel = (self.samples_per_pixel as f64).recip() * pixel;
+        let pixel = (self.config.samples_per_pixel as f64).recip() * pixel;
         pixel.clamp(0.0..0.9999)
     }
 
@@ -94,7 +136,7 @@ impl Camera {
                 output = attenuation * self.render_skybox(&cur);
                 break;
             }
-            if depth >= self.max_depth {
+            if depth >= self.config.max_depth {
                 output = BLACK;
                 break;
             }

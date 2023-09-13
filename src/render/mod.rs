@@ -25,7 +25,10 @@ use crate::{
     world::World,
 };
 
-use self::{camera::Camera, screen::Screen};
+use self::{
+    camera::{Camera, Defocus},
+    screen::Screen,
+};
 
 pub struct Renderer {
     screen: Screen,
@@ -68,21 +71,28 @@ pub struct PixelLocator {
     delta_u: Vec3,
     delta_v: Vec3,
     upper_left_loc: Vec3,
+    defocus: Defocus,
 }
 
 impl PixelLocator {
     fn from_screen_and_camera(screen: &Screen, camera: &Camera) -> Self {
-        let delta_u = camera.viewport().u() / (screen.width() as f64);
-        let delta_v = camera.viewport().v() / (screen.height() as f64);
+        let (viewport, defocus) = camera.viewport(screen);
+        let delta_u = viewport.u / (screen.width() as f64);
+        let delta_v = viewport.v / (screen.height() as f64);
         Self {
             delta_u,
             delta_v,
-            upper_left_loc: camera.upper_left() + 0.5 * (delta_u + delta_v),
+            upper_left_loc: viewport.upper_left + 0.5 * (delta_u + delta_v),
+            defocus,
         }
     }
 
     pub fn adjust_pixel_loc(&self, pixel_loc: Vec3, dx: f64, dy: f64) -> Vec3 {
         pixel_loc + (dx * self.delta_u) + (dy * self.delta_v)
+    }
+
+    pub fn defocus_pixel(&self, pixel_loc: Vec3, dx: f64, dy: f64) -> Vec3 {
+        pixel_loc + (dx * self.defocus.disk_u) + (dy * self.defocus.disk_v)
     }
 
     fn pixel_center(&self, x: u64, y: u64) -> Vec3 {

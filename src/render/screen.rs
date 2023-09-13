@@ -4,8 +4,8 @@ use super::viewport::Viewport;
 
 #[derive(Debug)]
 pub struct Screen {
-    width: u64,
-    height: u64,
+    pub(super) width: u64,
+    pub(super) height: u64,
 }
 
 impl Screen {
@@ -23,12 +23,5 @@ impl Screen {
 
     pub fn height(&self) -> u64 {
         self.height
-    }
-
-    pub fn viewport(&self, height: f64) -> Viewport {
-        Viewport {
-            width: height * (self.width as f64) / (self.height as f64),
-            height,
-        }
     }
 }

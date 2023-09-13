@@ -19,6 +19,13 @@ impl Vec3 {
         }
         new.normalize()
     }
+    pub fn random_in_unit_disk<R: Rng>(rng: &mut R) -> Self {
+        let mut new = Vec3::new(rng.gen_range(-1.0..1.0), rng.gen_range(-1.0..1.0), 0.);
+        while new.length_squared() < 1. {
+            new = Vec3::new(rng.gen_range(-1.0..1.0), rng.gen_range(-1.0..1.0), 0.);
+        }
+        new
+    }
 }
 
 pub struct UniformVec3 {
