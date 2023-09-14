@@ -10,6 +10,7 @@ use std::{
     path::Path,
 };
 
+use chrono::Utc;
 use indicatif::{ProgressBar, ProgressStyle};
 use rand::{
     distributions::Standard,
@@ -44,6 +45,7 @@ impl Renderer {
     }
 
     pub fn render(&mut self, camera: &mut Camera, world: &World) -> io::Result<()> {
+        let start = Utc::now();
         let width = self.screen.width();
         let height = self.screen.height();
 
@@ -69,6 +71,14 @@ impl Renderer {
             }
         }
 
+        let diff = Utc::now() - start;
+        println!(
+            "Completed Render in {:0>2}:{:0>2}:{:0>2}.{:0>3}",
+            diff.num_hours() % 24,
+            diff.num_minutes() % 60,
+            diff.num_seconds() % 60,
+            diff.num_milliseconds() % 1000
+        );
         Ok(())
     }
 }
