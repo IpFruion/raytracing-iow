@@ -1,5 +1,6 @@
 use std::{
     fmt::Display,
+    iter::Sum,
     ops::{Add, AddAssign, Bound, Mul, RangeBounds},
 };
 
@@ -25,6 +26,12 @@ impl Color {
             interval.clamp(self.0.y),
             interval.clamp(self.0.z),
         ))
+    }
+}
+
+impl Sum for Color {
+    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
+        iter.reduce(|a, b| a + b).unwrap_or(BLACK)
     }
 }
 

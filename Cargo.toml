@@ -9,3 +9,4 @@ edition = "2021"
 approx = "0.5.1"
 indicatif = "0.17.6"
 rand = { version = "0.8.5", features = ["small_rng"] }
+rayon = "1.7.0"

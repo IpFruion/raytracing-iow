@@ -24,13 +24,15 @@ use shapes::sphere::Sphere;
 use vec3::{Vec3, ONE};
 use world::Object;
 
+use crate::{shapes::cube::Cube, world::World};
+
 const ASPECT_RATIO: f64 = 16. / 9.;
 
 fn main() -> io::Result<()> {
-    let mut filename = args().skip(1).next().unwrap_or("rendering2".to_owned());
+    let mut filename = args().skip(1).next().unwrap_or("rendering".to_owned());
     filename.push_str(".ppm");
 
-    let screen = Screen::new_aspect_ratio(600, ASPECT_RATIO);
+    let screen = Screen::new_aspect_ratio(1200, ASPECT_RATIO);
     let camera_config = CameraConfig {
         samples_per_pixel: 10,
         max_depth: 50,
@@ -72,7 +74,7 @@ fn main() -> io::Result<()> {
     println!("Setup World Starting Render");
 
     let mut renderer = Renderer::new(screen, &filename)?;
-    renderer.render(&mut camera, &world)?;
+    renderer.render(&mut camera, &World::from(world))?;
 
     Ok(())
 }

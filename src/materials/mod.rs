@@ -19,7 +19,7 @@ pub enum Material {
     Dielectric(Dielectric),
     Lambertain(Lambertain),
     Metal(Metal),
-    Custom(Box<dyn Scatter>),
+    Custom(Box<dyn Scatter + Send + Sync>),
 }
 
 macro_rules! mat_from {
@@ -35,8 +35,8 @@ mat_from!(Dielectric);
 mat_from!(Lambertain);
 mat_from!(Metal);
 
-impl From<Box<dyn Scatter>> for Material {
-    fn from(value: Box<dyn Scatter>) -> Self {
+impl From<Box<dyn Scatter + Send + Sync>> for Material {
+    fn from(value: Box<dyn Scatter + Send + Sync>) -> Self {
         Self::Custom(value)
     }
 }
