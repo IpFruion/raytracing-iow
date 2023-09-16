@@ -29,7 +29,7 @@ use crate::{shapes::cube::Cube, world::World};
 const ASPECT_RATIO: f64 = 16. / 9.;
 
 fn main() -> io::Result<()> {
-    let mut filename = args().skip(1).next().unwrap_or("rendering".to_owned());
+    let mut filename = args().nth(1).unwrap_or("rendering".to_owned());
     filename.push_str(".ppm");
 
     let screen = Screen::new_aspect_ratio(1200, ASPECT_RATIO);
@@ -44,7 +44,7 @@ fn main() -> io::Result<()> {
     };
     let viewport_config = ViewportConfig::Fov { vertical_fov: 20.0 };
 
-    let mut camera = Camera::new(camera_config, viewport_config);
+    let camera = Camera::new(camera_config, viewport_config);
 
     let mut world = vec![
         Object::new(
@@ -74,7 +74,7 @@ fn main() -> io::Result<()> {
     println!("Setup World Starting Render");
 
     let mut renderer = Renderer::new(screen, &filename)?;
-    renderer.render(&mut camera, &World::from(world))?;
+    renderer.render(&camera, &World::from(world))?;
 
     Ok(())
 }

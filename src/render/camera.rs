@@ -1,5 +1,3 @@
-use std::ops::Deref;
-
 use rand::{rngs::SmallRng, Rng, SeedableRng};
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 
@@ -41,7 +39,6 @@ pub struct Defocus {
 
 #[derive(Debug)]
 pub struct Camera {
-    rng: SmallRng,
     config: CameraConfig,
     viewport_config: ViewportConfig,
     focal_length: f64,
@@ -53,7 +50,6 @@ impl Camera {
         Self {
             config,
             viewport_config,
-            rng: SmallRng::from_entropy(),
             focal_length,
         }
     }
@@ -129,7 +125,7 @@ impl Camera {
         let mut stack = vec![(ray, WHITE, 0)];
         let mut output = BLACK;
         while let Some((cur, attenuation, depth)) = stack.pop() {
-            if let Some(cast) = world.deref().cast(rng, &cur, 0.001..f64::INFINITY) {
+            if let Some(cast) = world.cast(rng, &cur, 0.001..f64::INFINITY) {
                 let new_att = cast.color.map(|c| attenuation * c).unwrap_or(BLACK);
                 stack.push((cast.bounce, new_att, depth + 1))
             } else {

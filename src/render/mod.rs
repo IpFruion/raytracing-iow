@@ -81,7 +81,7 @@ impl Renderer {
 
         println!("Writing Pixels");
         for pixel in pixels {
-            write!(self.writer, "{}\n", pixel)?;
+            writeln!(self.writer, "{}", pixel)?;
         }
 
         let diff = Utc::now() - start;
