@@ -1,13 +1,11 @@
-use std::ops::Deref;
-
 use rand::{rngs::SmallRng, Rng, SeedableRng};
+use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 
 use crate::{
     color::{Color, BLACK, SKY_BLUE, WHITE},
     ray::Ray,
     shapes::Hittable,
     vec3::{Vec3, ONE},
-    world::Castable,
 };
 
 use super::{
@@ -41,7 +39,6 @@ pub struct Defocus {
 
 #[derive(Debug)]
 pub struct Camera {
-    rng: SmallRng,
     config: CameraConfig,
     viewport_config: ViewportConfig,
     focal_length: f64,
@@ -53,7 +50,6 @@ impl Camera {
         Self {
             config,
             viewport_config,
-            rng: SmallRng::from_entropy(),
             focal_length,
         }
     }
@@ -93,50 +89,51 @@ impl Camera {
         (viewport, defocus)
     }
 
-    pub fn get_color(
-        &mut self,
-        world: &World,
-        pixel_locator: &PixelLocator,
-        pixel_loc: Vec3,
-    ) -> Color {
+    pub fn get_color(&self, world: &World, pixel_locator: &PixelLocator, pixel_loc: Vec3) -> Color {
         let mut pixel = BLACK;
-        for i in 0..self.config.samples_per_pixel {
-            // Adds antialising
-            let px = -0.5 + self.rng.gen::<f64>();
-            let py = -0.5 + self.rng.gen::<f64>();
-            let pixel_sample = pixel_locator.adjust_pixel_loc(pixel_loc, px, py);
-            let ray_origin = if self.config.defocus_angle <= 0. {
-                self.config.pos
-            } else {
-                let p = Vec3::random_in_unit_disk(&mut self.rng);
-                pixel_locator.defocus_pixel(self.config.pos, p.x, p.y)
-            };
-            let ray_direction = pixel_sample - ray_origin;
-            let ray = ray_origin.ray(ray_direction);
-
-            pixel += self.ray_color(ray, world);
-        }
+        let defocus_angle = self.config.defocus_angle;
+        let pos = self.config.pos;
+        let max_depth = self.config.max_depth;
+        let pixel = BLACK
+            + (0..self.config.samples_per_pixel)
+                .into_par_iter()
+                .map_init(
+                    || SmallRng::from_entropy(),
+                    |rng, _| {
+                        // Adds antialising
+                        let px = -0.5 + rng.gen::<f64>();
+                        let py = -0.5 + rng.gen::<f64>();
+                        let pixel_sample = pixel_locator.adjust_pixel_loc(pixel_loc, px, py);
+                        let ray_origin = if defocus_angle <= 0. {
+                            pos
+                        } else {
+                            let p = Vec3::random_in_unit_disk(rng);
+                            pixel_locator.defocus_pixel(pos, p.x, p.y)
+                        };
+                        let ray_direction = pixel_sample - ray_origin;
+                        let ray = ray_origin.ray(ray_direction);
+                        Self::ray_color(rng, ray, world, max_depth)
+                    },
+                )
+                .sum();
 
         let pixel = (self.config.samples_per_pixel as f64).recip() * pixel;
         pixel.clamp(0.0..0.9999)
     }
 
-    fn ray_color(&mut self, ray: Ray, world: &World) -> Color {
+    fn ray_color(rng: &mut SmallRng, ray: Ray, world: &World, max_depth: u32) -> Color {
         let mut stack = vec![(ray, WHITE, 0)];
         let mut output = BLACK;
         while let Some((cur, attenuation, depth)) = stack.pop() {
-            if let Some(cast) = world
-                .deref()
-                .cast(&mut self.rng, &cur, 0.001..f64::INFINITY)
-            {
+            if let Some(cast) = world.cast(rng, &cur, 0.001..f64::INFINITY) {
                 let new_att = cast.color.map(|c| attenuation * c).unwrap_or(BLACK);
                 stack.push((cast.bounce, new_att, depth + 1))
             } else {
                 // ray stopped bouncing
-                output = attenuation * self.render_skybox(&cur);
+                output = attenuation * Self::render_skybox(&cur);
                 break;
             }
-            if depth >= self.config.max_depth {
+            if depth >= max_depth {
                 output = BLACK;
                 break;
             }
@@ -144,7 +141,7 @@ impl Camera {
         output
     }
 
-    fn render_skybox(&self, ray: &Ray) -> Color {
+    fn render_skybox(ray: &Ray) -> Color {
         let direction = ray.direction();
         let gradiant = 0.5 * (direction.y + 1.0);
         Color::from((1.0 - gradiant) * WHITE + gradiant * SKY_BLUE)

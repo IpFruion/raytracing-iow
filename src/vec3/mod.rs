@@ -25,41 +25,6 @@ impl Vec3 {
         Self { x, y, z }
     }
 
-    pub fn length(&self) -> f64 {
-        self.length_squared().sqrt()
-    }
-
-    pub fn length_squared(&self) -> f64 {
-        self.x * self.x + self.y * self.y + self.z * self.z
-    }
-
-    pub fn dot(&self, other: Self) -> f64 {
-        self.x * other.x + self.y * other.y + self.z * other.z
-    }
-
-    pub fn reflect(&self, n: Self) -> Self {
-        *self - 2. * self.dot(n) * n
-    }
-
-    pub fn refract(&self, n: Self, etai_over_etat: f64) -> Self {
-        let cos_theta = (-*self).dot(n).min(1.);
-        let r_out_perp = etai_over_etat * (*self + cos_theta * n);
-        let r_out_parallel = -(1. - r_out_perp.length_squared()).abs().sqrt() * n;
-        r_out_perp + r_out_parallel
-    }
-
-    pub fn cross(&self, other: Self) -> Self {
-        Self {
-            x: self.y * other.z - self.z * other.y,
-            y: self.z * other.x - self.x * other.z,
-            z: self.x * other.y - self.y * other.x,
-        }
-    }
-
-    pub fn normalize(&self) -> Self {
-        *self / self.length()
-    }
-
     pub fn ray(&self, direction: Self) -> Ray {
         Ray::new(*self, direction)
     }

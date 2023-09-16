@@ -8,6 +8,7 @@ use std::{
     io::{self, BufWriter, Seek, SeekFrom, Write},
     ops::Range,
     path::Path,
+    time::SystemTime,
 };
 
 use chrono::Utc;
@@ -17,6 +18,7 @@ use rand::{
     rngs::{SmallRng, ThreadRng},
     Rng, SeedableRng,
 };
+use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 
 use crate::{
     color::{Color, BLACK},
@@ -44,13 +46,13 @@ impl Renderer {
         })
     }
 
-    pub fn render(&mut self, camera: &mut Camera, world: &World) -> io::Result<()> {
+    pub fn render(&mut self, camera: &Camera, world: &World) -> io::Result<()> {
         let start = Utc::now();
         let width = self.screen.width();
         let height = self.screen.height();
 
-        let bar = ProgressBar::new(width * height);
-        bar.set_style(
+        let progress_bar = ProgressBar::new(width * height);
+        progress_bar.set_style(
             ProgressStyle::with_template(
                 "[ETA: {eta_precise}] {bar:40.cyan/blue} {percent:2}% {human_pos:>7}/{human_len:7} pixels",
             )
@@ -62,13 +64,24 @@ impl Renderer {
 
         let pixel_locator = PixelLocator::from_screen_and_camera(&self.screen, &camera);
 
-        for y in 0..height {
-            for x in 0..width {
-                let pixel_center = pixel_locator.pixel_center(x, y);
-                let pixel = camera.get_color(world, &pixel_locator, pixel_center);
-                write!(self.writer, "{}\n", pixel)?;
-                bar.inc(1);
-            }
+        let locator = &pixel_locator;
+        let bar = &progress_bar;
+        let pixels: Vec<Color> = (0..height)
+            .into_par_iter()
+            .flat_map(move |y| {
+                (0..width).into_par_iter().map(move |x| {
+                    let pixel_center = locator.pixel_center(x, y);
+
+                    let pixel = camera.get_color(world, locator, pixel_center);
+                    bar.inc(1);
+                    pixel
+                })
+            })
+            .collect();
+
+        println!("Writing Pixels");
+        for pixel in pixels {
+            writeln!(self.writer, "{}", pixel)?;
         }
 
         let diff = Utc::now() - start;

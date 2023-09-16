@@ -1,6 +1,6 @@
 use std::ops::Range;
 
-use rand::rngs::SmallRng;
+use rand::{rngs::SmallRng, SeedableRng};
 
 use crate::{
     color::Color,
@@ -8,25 +8,22 @@ use crate::{
     ray::Ray,
     shapes::{Hit, Hittable, Shape},
 };
+use rayon::prelude::*;
 
-pub type World = Vec<Object>;
+pub struct World(Vec<Object>);
 
-pub struct Cast {
-    t: f64,
-    pub bounce: Ray,
-    pub color: Option<Color>,
+impl From<Vec<Object>> for World {
+    fn from(value: Vec<Object>) -> Self {
+        Self(value)
+    }
 }
 
-pub trait Castable {
-    fn cast(&self, rng: &mut SmallRng, ray: &Ray, cast_range: Range<f64>) -> Option<Cast>;
-}
-
-impl<C: Castable> Castable for &[C] {
-    fn cast(&self, rng: &mut SmallRng, ray: &Ray, cast_range: Range<f64>) -> Option<Cast> {
+impl World {
+    pub fn cast(&self, rng: &mut SmallRng, ray: &Ray, cast_range: Range<f64>) -> Option<Cast> {
         let mut cast = None;
         let mut cur_range = cast_range;
 
-        for obj in self.iter() {
+        for obj in self.0.iter() {
             if let Some(c) = obj.cast(rng, ray, cur_range.clone()) {
                 cur_range.end = c.t;
                 cast = Some(c);
@@ -37,10 +34,10 @@ impl<C: Castable> Castable for &[C] {
     }
 }
 
-impl<C: Castable + ?Sized> Castable for Box<C> {
-    fn cast(&self, rng: &mut SmallRng, ray: &Ray, cast_range: Range<f64>) -> Option<Cast> {
-        (**self).cast(rng, ray, cast_range)
-    }
+pub struct Cast {
+    t: f64,
+    pub bounce: Ray,
+    pub color: Option<Color>,
 }
 
 pub struct Object {
@@ -55,10 +52,8 @@ impl Object {
             mat: mat.into(),
         }
     }
-}
 
-impl Castable for Object {
-    fn cast(&self, rng: &mut SmallRng, ray: &Ray, cast_range: Range<f64>) -> Option<Cast> {
+    pub fn cast(&self, rng: &mut SmallRng, ray: &Ray, cast_range: Range<f64>) -> Option<Cast> {
         if let Some(hit) = self.shape.hit(ray, cast_range) {
             let (bounce, color) = self.mat.scatter(rng, ray, &hit);
             return Some(Cast {
