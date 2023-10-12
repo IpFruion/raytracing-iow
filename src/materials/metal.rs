@@ -18,9 +18,10 @@ impl Metal {
 impl Scatter for Metal {
     fn scatter(&self, rng: &mut SmallRng, ray: &Ray, hit: &Hit) -> (Ray, Option<Color>) {
         let reflected = ray.direction().normalize().reflect(hit.normal);
-        let scattered = hit
-            .point
-            .ray(reflected + self.fuzziness * Vec3::random_unit_sphere(rng));
+        let scattered = hit.point.ray_timed(
+            reflected + self.fuzziness * Vec3::random_unit_sphere(rng),
+            ray.time(),
+        );
         if scattered.direction().dot(hit.normal) < 0. {
             return (scattered, None);
         }

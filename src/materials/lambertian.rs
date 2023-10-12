@@ -26,7 +26,7 @@ impl Scatter for Lambertain {
         if ulps_eq!(direction, ZERO) {
             direction = hit.normal
         }
-        let scattered = hit.point.ray(direction);
+        let scattered = hit.point.ray_timed(direction, ray.time());
         (scattered, Some(self.albedo.clone()))
     }
 }

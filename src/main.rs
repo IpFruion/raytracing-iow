@@ -34,7 +34,7 @@ fn main() -> io::Result<()> {
 
     let screen = Screen::new_aspect_ratio(1200, ASPECT_RATIO);
     let camera_config = CameraConfig {
-        samples_per_pixel: 10,
+        samples_per_pixel: 500,
         max_depth: 50,
         pos: (13., 2., 3.).into(),
         look_at: (0., 0., 0.).into(),
@@ -62,7 +62,10 @@ fn main() -> io::Result<()> {
             let x = i as f64 + 0.9 * rng.gen::<f64>();
             let z = j as f64 + 0.9 * rng.gen::<f64>();
             let color = Color::from(rng.gen::<Vec3>());
-            let shape = Sphere::new((x, 0.2, z), 0.2);
+            let from = Vec3::new(x, 0.2, z);
+            let to = from + Vec3::new(0., rng.gen_range(0.0..0.5), 0.);
+
+            let shape = Sphere::new_moving(from, to, 0.2);
             let obj = match rng.gen_range(0..3) {
                 0 => Object::new(shape, Metal::new(color, 0.3)),
                 2 => Object::new(shape, Dielectric::new(rng.gen_range(0.5..2.0))),

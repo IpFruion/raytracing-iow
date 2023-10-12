@@ -9,6 +9,7 @@ use super::{Hit, Hittable};
 #[derive(Debug)]
 pub struct Sphere {
     center: Vec3,
+    center_vec: Option<Vec3>,
     radius: f64,
 }
 
@@ -16,6 +17,16 @@ impl Sphere {
     pub fn new<C: Into<Vec3>>(center: C, radius: f64) -> Self {
         Self {
             center: center.into(),
+            center_vec: None,
+            radius,
+        }
+    }
+
+    pub fn new_moving<F: Into<Vec3>, T: Into<Vec3>>(from: F, to: T, radius: f64) -> Self {
+        let center = from.into();
+        Self {
+            center,
+            center_vec: Some(to.into() - center),
             radius,
         }
     }
@@ -23,9 +34,15 @@ impl Sphere {
 
 impl Hittable for Sphere {
     fn hit(&self, ray: &Ray, hit_range: Range<f64>) -> Option<Hit> {
+        let center = self.center;
+        let center = self
+            .center_vec
+            .map(|v| center + ray.time() * v)
+            .unwrap_or(center);
+
         let direction = ray.direction();
 
-        let camera_to_sphere = ray.origin() - self.center;
+        let camera_to_sphere = ray.origin() - center;
 
         let a = direction.length_squared();
         let half_b = camera_to_sphere.dot(direction);
@@ -45,7 +62,7 @@ impl Hittable for Sphere {
         }
 
         let point = ray.at(root);
-        let normal = (point - self.center) / self.radius;
+        let normal = (point - center) / self.radius;
         Some(Hit::new(ray, root, point, normal))
     }
 }

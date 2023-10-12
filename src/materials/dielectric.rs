@@ -41,7 +41,7 @@ impl Scatter for Dielectric {
             unit_direction.refract(hit.normal, refraction_ratio)
         };
 
-        (hit.point.ray(direction), Some(WHITE))
+        (hit.point.ray_timed(direction, ray.time()), Some(WHITE))
     }
 }
 

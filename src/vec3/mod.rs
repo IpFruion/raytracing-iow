@@ -25,8 +25,12 @@ impl Vec3 {
         Self { x, y, z }
     }
 
-    pub fn ray(&self, direction: Self) -> Ray {
-        Ray::new(*self, direction)
+    pub fn ray(self, direction: Self) -> Ray {
+        Ray::new(self, direction)
+    }
+
+    pub fn ray_timed(self, direction: Self, time: f64) -> Ray {
+        Ray::new_timed(self, direction, time)
     }
 }
 

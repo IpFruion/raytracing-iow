@@ -111,7 +111,9 @@ impl Camera {
                             pixel_locator.defocus_pixel(pos, p.x, p.y)
                         };
                         let ray_direction = pixel_sample - ray_origin;
-                        let ray = ray_origin.ray(ray_direction);
+                        let ray_time = rng.gen::<f64>();
+
+                        let ray = ray_origin.ray_timed(ray_direction, ray_time);
                         Self::ray_color(rng, ray, world, max_depth)
                     },
                 )
