@@ -1,0 +1,15 @@
+[package]
+name = "raytracing-iow"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+approx = "0.5.1"
+rand = { version = "0.8.5", features = ["small_rng"] }
+rayon = "1.7.0"
+serde = { version = "1.0.188", optional = true }
+utoipa = { version = "4.0.0", optional = true }
+
+[features]
+serde = ["dep:serde"]
+utoipa = ["dep:utoipa"]

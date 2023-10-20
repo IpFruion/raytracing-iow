@@ -1,0 +1,11 @@
+[package]
+name = "riow"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+indicatif = "0.17.6"
+chrono = "0.4.30"
+raytracing-iow = { path = "../core/" }
+rand = { version = "0.8.5", features = ["small_rng"] }
+rayon = "1.7.0"
